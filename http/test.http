@@ -1,0 +1,35 @@
+### Test v1 Webhook
+POST http://localhost:8080/api/v1
+Content-Type: application/json
+X-Auth-Token: secure-token
+X-Request-Id: 1
+
+{
+  "data": {
+    "type": "message",
+    "attributes": {
+      "id": "ada-ad",
+      "name": "purchase.pl",
+      "occuredOn": "2025-01-01T10:45:00Z",
+      "contentType": "application/vnd.api+json",
+      "contentSchema": "com.example.webhook.model.payload.PurchaseCreatedPayload",
+      "additonalContext": {
+        "sourceSystem": "A W",
+        "region": "T",
+        "type": "p.cr",
+        "pkg": "A_EL",
+        "source": "https://s.com"
+      },
+      "payload": {
+        "pId": "asdl-asdfa",
+        "tag": "",
+        "value": "",
+        "accounts": [{"tag":"accountID","value":"11518288"}],
+        "analysisId": "742387-fdsg",
+        "filename": "https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf",
+        "user": "usd",
+        "creationTimestamp": "2025-05-29T13:10:32.412285288Z"
+      }
+    }
+  }
+}

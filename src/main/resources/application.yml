@@ -1,0 +1,53 @@
+spring:
+  application:
+    name: webhook-service
+
+webhook:
+  retry:
+    max-attempts: 5
+    initial-delay-ms: 1000
+    multiplier: 2.0
+
+  # Dynamic schema → payload class + ordered handler chain
+  schemas:
+    "[com.example.webhook.model.payload.PurchaseCreatedPayload]":
+      className: com.example.webhook.model.payload.PurchaseCreatedPayload
+      handlers:
+        - fetchPdfHandler        # PurchaseCreatedPayload -> byte[]
+        - storeNs3Handler        # byte[] -> String (ns3 uri)
+        - callModuleCHandler     # String (ns3 uri) -> String (status)
+      retry:
+        enabled: true
+        strategy: backoff        # fixed | backoff | jitter
+
+    # Example: schema with jitter strategy
+    "[com.example.webhook.model.payload.PurchaseCreatedPayload.jitter]":
+      className: com.example.webhook.model.payload.PurchaseCreatedPayload
+      handlers:
+        - fetchPdfHandler
+        - storeNs3Handler
+        - callModuleCHandler
+      retry:
+        enabled: true
+        strategy: jitter         # uses jittered backoff
+
+    # Example: schema without retry block -> NO RETRY
+    "[com.example.webhook.model.payload.PurchaseCreatedPayload.no.retry]":
+      className: com.example.webhook.model.payload.PurchaseCreatedPayload
+      handlers:
+        - fetchPdfHandler
+        - storeNs3Handler
+        - callModuleCHandler
+      # retry omitted => no retry
+
+security:
+  webhook:
+    expected-token: "secure-token"
+    required-headers:
+      - "X-Auth-Token"
+      - "X-Request-Id"
+
+logging:
+  level:
+    root: INFO
+    com.example.webhook: DEBUG
