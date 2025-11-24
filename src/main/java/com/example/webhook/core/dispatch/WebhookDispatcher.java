@@ -27,7 +27,7 @@ public class WebhookDispatcher {
      * - If missing or false, no retry.
      */
     public <T> Mono<String> dispatch(WebhookRequestV1<T> request) {
-        String schema = request.data().attributes().contentSchema();
+        String schema = request.data().attributes().schema();
         Object input = request.data().attributes().payload();
 
         GenericReactiveHandlerChain chain = chainBuilder.buildChain(schema);

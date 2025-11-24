@@ -20,11 +20,11 @@ public class WebhookRequestMapper {
 
     public WebhookRequestV1<?> map(String json) throws Exception {
         JsonNode root = objectMapper.readTree(json);
-        String schema = root.path("data").path("attributes").path("contentSchema").asText();
+        String schema = root.path("data").path("attributes").path("schema").asText();
 
         var mapping = schemaProperties.getSchemas().get(schema);
         if (mapping == null) {
-            throw new IllegalArgumentException("Unknown contentSchema: " + schema);
+            throw new IllegalArgumentException("Unknown schema: " + schema);
         }
 
         Class<?> payloadClass = Class.forName(mapping.getClassName());

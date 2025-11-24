@@ -19,6 +19,16 @@ public class GenericWebhookController {
         this.dispatcher = dispatcher;
     }
 
+    /*@PostMapping
+    public Mono<ResponseEntity<String>> receive(
+            @PathVariable("version") String version,
+            @RequestBody String body) {
+
+        return Mono.fromCallable(() -> (WebhookRequestV1<?>) mapper.map(body))
+                .flatMap(dispatcher::dispatch)
+                .map(status -> ResponseEntity.ok("Processed successfully (" + version + "): " + status));
+    }*/
+
     @PostMapping
     public Mono<ResponseEntity<String>> receive(
             @PathVariable("version") String version,

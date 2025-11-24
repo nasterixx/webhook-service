@@ -21,24 +21,27 @@ webhook:
         strategy: backoff        # fixed | backoff | jitter
 
     # Example: schema with jitter strategy
-    "[com.example.webhook.model.payload.PurchaseCreatedPayload.jitter]":
-      className: com.example.webhook.model.payload.PurchaseCreatedPayload
+    "[com.example.webhook.model.payload.OrderCreatedPayload]":
+      className: com.example.webhook.model.payload.OrderCreatedPayload
       handlers:
         - fetchPdfHandler
         - storeNs3Handler
         - callModuleCHandler
       retry:
         enabled: true
-        strategy: jitter         # uses jittered backoff
+        strategy: jitter
 
     # Example: schema without retry block -> NO RETRY
-    "[com.example.webhook.model.payload.PurchaseCreatedPayload.no.retry]":
-      className: com.example.webhook.model.payload.PurchaseCreatedPayload
+    "[com.example.webhook.model.payload.LabelCreatedPayload]":
+      className: com.example.webhook.model.payload.LabelCreatedPayload
       handlers:
         - fetchPdfHandler
         - storeNs3Handler
         - callModuleCHandler
       # retry omitted => no retry
+      retry:
+        enabled: true
+        strategy: fixed
 
 security:
   webhook:

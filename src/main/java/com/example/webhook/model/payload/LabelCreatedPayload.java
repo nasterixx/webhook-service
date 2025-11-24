@@ -5,9 +5,10 @@ import lombok.EqualsAndHashCode;
 
 @EqualsAndHashCode(callSuper = true)
 @Data
-public class PurchaseCreatedPayload extends Payload{
+public class LabelCreatedPayload extends Payload {
 
-    private String purchaseId;
-    private String purchaserName;
+    private String labelId;
+    private String shipperName;
     private String filename;
+
 }

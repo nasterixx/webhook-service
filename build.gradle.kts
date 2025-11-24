@@ -34,6 +34,10 @@ dependencies {
     testImplementation("org.springframework.boot:spring-boot-starter-test") {
         exclude(group = "org.junit.vintage", module = "junit-vintage-engine")
     }
+
+    compileOnly ("org.projectlombok:lombok:1.18.30") // Use the latest version
+    annotationProcessor ("org.projectlombok:lombok:1.18.30") // Use the latest version
+
 }
 
 tasks.test {
