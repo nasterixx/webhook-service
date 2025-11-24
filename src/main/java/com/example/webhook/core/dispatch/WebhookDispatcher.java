@@ -4,6 +4,7 @@ import com.example.webhook.core.chain.GenericReactiveHandlerChain;
 import com.example.webhook.core.properties.RetryProperties;
 import com.example.webhook.core.properties.WebhookSchemaProperties;
 import com.example.webhook.model.common.WebhookRequestV1;
+import com.example.webhook.model.common.WebhookRequestV2;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Mono;
 import reactor.util.retry.Retry;
@@ -26,10 +27,21 @@ public class WebhookDispatcher {
      * - If schema.retry.enabled == true, choose strategy (fixed, backoff, jitter).
      * - If missing or false, no retry.
      */
-    public <T> Mono<String> dispatch(WebhookRequestV1<T> request) {
-        String schema = request.data().attributes().schema();
-        Object input = request.data().attributes().payload();
+    public <T> Mono<String> dispatchV1(WebhookRequestV1<T> request) {
+        String schema = request.getData().getAttributes().getSchema();
+        Object input = request.getData().getAttributes().getPayload();
 
+        return dispatch(schema, input);
+    }
+
+    public <T> Mono<String> dispatchV2(WebhookRequestV2<T> request) {
+        String schema = request.getData().getAttributes().getSchema();
+        Object input = request.getData().getAttributes().getPayload();
+
+        return dispatch(schema, input);
+    }
+
+    private Mono<String> dispatch(String schema, Object input) {
         GenericReactiveHandlerChain chain = chainBuilder.buildChain(schema);
         WebhookSchemaProperties.SchemaMapping mapping = chainBuilder.getSchemaMapping(schema);
 
@@ -50,34 +62,7 @@ public class WebhookDispatcher {
 
         Retry retrySpec = null;
 
-        /*switch (strategy) {
-            case "fixed" -> {
-                retrySpec = Retry.fixedDelay(
-                        retryProperties.getMaxAttempts(),
-                        Duration.ofMillis(retryProperties.getInitialDelayMs())
-                );
-            }
-            case "jitter" -> {
-                retrySpec = Retry.backoff(
-                                retryProperties.getMaxAttempts(),
-                                Duration.ofMillis(retryProperties.getInitialDelayMs()))
-                        .jitter(0.5); // 50% jitter
-            }
-            case "backoff":
-            default -> {
-                retrySpec = Retry.backoff(
-                        retryProperties.getMaxAttempts(),
-                        Duration.ofMillis(retryProperties.getInitialDelayMs()));
-            }
-        }*/
-
         switch (strategy) {
-           /* case "fixed" -> {
-                retrySpec = Retry.fixedDelay(
-                        retryProperties.getMaxAttempts(),
-                        Duration.ofMillis(retryProperties.getInitialDelayMs())
-                );
-            }*/
             case "jitter" -> {
                 retrySpec = Retry.backoff(
                                 retryProperties.getMaxAttempts(),
@@ -97,8 +82,6 @@ public class WebhookDispatcher {
             }
         }
 
-
-//        assert retrySpec != null;
         return pipeline.retryWhen(retrySpec);
     }
 }
