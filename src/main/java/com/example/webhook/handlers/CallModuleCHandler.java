@@ -2,11 +2,12 @@ package com.example.webhook.handlers;
 
 import com.example.webhook.core.chain.ReactiveWebhookHandler;
 import com.example.webhook.integrations.ModuleCClient;
+import com.example.webhook.model.payload.WebhookProcessingResult;
 import org.springframework.stereotype.Component;
 import reactor.core.publisher.Mono;
 
 @Component("callModuleCHandler")
-public class CallModuleCHandler implements ReactiveWebhookHandler<String, String> {
+public class CallModuleCHandler implements ReactiveWebhookHandler<String, WebhookProcessingResult> {
 
     private final ModuleCClient moduleCClient;
 
@@ -15,7 +16,8 @@ public class CallModuleCHandler implements ReactiveWebhookHandler<String, String
     }
 
     @Override
-    public Mono<String> handle(String ns3Location) {
-        return moduleCClient.initiateProcessing(ns3Location);
+    public Mono<WebhookProcessingResult> handle(String ns3Location) {
+        return moduleCClient.initiateProcessing(ns3Location)
+                .map(status -> new WebhookProcessingResult(ns3Location, status));
     }
 }

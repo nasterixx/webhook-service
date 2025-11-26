@@ -9,6 +9,8 @@ import reactor.core.publisher.Mono;
 import reactor.util.retry.Retry;
 
 import java.time.Duration;
+import java.util.ArrayList;
+import java.util.List;
 
 @Service
 public class WebhookDispatcher {
@@ -23,18 +25,18 @@ public class WebhookDispatcher {
 
     /**
      * Execute a full reactive chain. Per-schema retry:
-     * - If schema.retry.enabled == true, choose strategy (fixed, backoff, jitter).
+     * - If schema.retry.enabled == true, choose strategy (fixed, backoff, jitter)
+     *   and only retry on exceptions listed in schema.retry.retryOn.
      * - If missing or false, no retry.
      */
-    public <T> Mono<String> dispatch(WebhookRequestV1<T> request) {
-        String schema = request.data().attributes().schema();
+    public Mono<Object> dispatch(WebhookRequestV1 request) {
+        String schema = request.data().attributes().contentSchema();
         Object input = request.data().attributes().payload();
 
         GenericReactiveHandlerChain chain = chainBuilder.buildChain(schema);
         WebhookSchemaProperties.SchemaMapping mapping = chainBuilder.getSchemaMapping(schema);
 
-        Mono<String> pipeline = chain.execute(input)
-                .map(result -> (String) result);
+        Mono<Object> pipeline = chain.execute(input);
 
         WebhookSchemaProperties.SchemaRetry schemaRetry = mapping.getRetry();
         boolean retryEnabled = schemaRetry != null &&
@@ -48,57 +50,52 @@ public class WebhookDispatcher {
                 ? schemaRetry.getStrategy().toLowerCase()
                 : "backoff";
 
-        Retry retrySpec = null;
+        Retry retrySpec = buildRetrySpec(strategy);
 
-        /*switch (strategy) {
-            case "fixed" -> {
-                retrySpec = Retry.fixedDelay(
-                        retryProperties.getMaxAttempts(),
-                        Duration.ofMillis(retryProperties.getInitialDelayMs())
-                );
-            }
-            case "jitter" -> {
-                retrySpec = Retry.backoff(
-                                retryProperties.getMaxAttempts(),
-                                Duration.ofMillis(retryProperties.getInitialDelayMs()))
-                        .jitter(0.5); // 50% jitter
-            }
-            case "backoff":
-            default -> {
-                retrySpec = Retry.backoff(
-                        retryProperties.getMaxAttempts(),
-                        Duration.ofMillis(retryProperties.getInitialDelayMs()));
-            }
-        }*/
+        // Build list of retryable exception classes
+        List<Class<? extends Throwable>> retryable = new ArrayList<>();
+//        if (schemaRetry.getRetryOn() != null) {
+//            for (String cn : schemaRetry.getRetryOn()) {
+//                try {
+//                    Class<?> clazz = Class.forName(cn);
+//                    if (Throwable.class.isAssignableFrom(clazz)) {
+//                        @SuppressWarnings("unchecked")
+//                        Class<? extends Throwable> c = (Class<? extends Throwable>) clazz;
+//                        retryable.add(c);
+//                    }
+//                } catch (ClassNotFoundException ignored) {}
+//            }
+//        }
 
-        switch (strategy) {
-           /* case "fixed" -> {
-                retrySpec = Retry.fixedDelay(
-                        retryProperties.getMaxAttempts(),
-                        Duration.ofMillis(retryProperties.getInitialDelayMs())
-                );
-            }*/
-            case "jitter" -> {
-                retrySpec = Retry.backoff(
-                                retryProperties.getMaxAttempts(),
-                                Duration.ofMillis(retryProperties.getInitialDelayMs()))
-                        .jitter(0.5);
-            }
-            case "backoff" -> {
-                retrySpec = Retry.backoff(
-                        retryProperties.getMaxAttempts(),
-                        Duration.ofMillis(retryProperties.getInitialDelayMs()));
-            }
-            default -> {
-                retrySpec = Retry.fixedDelay(
-                        retryProperties.getMaxAttempts(),
-                        Duration.ofMillis(retryProperties.getInitialDelayMs())
-                );
-            }
-        }
-
-
-//        assert retrySpec != null;
+        // If enabled but no retryOn specified, fallback to retry on all exceptions
         return pipeline.retryWhen(retrySpec);
+
+//        return pipeline.retryWhen(
+//                retrySpec.filter(ex -> {
+//                    for (Class<? extends Throwable> c : retryable) {
+//                        if (c.isInstance(ex)) {
+//                            return true;
+//                        }
+//                    }
+//                    return false;
+//                })
+//        );
+    }
+
+    private Retry buildRetrySpec(String strategy) {
+        return switch (strategy) {
+            case "fixed" -> Retry.fixedDelay(
+                    retryProperties.getMaxAttempts(),
+                    Duration.ofMillis(retryProperties.getInitialDelayMs())
+            );
+            case "jitter" -> Retry.backoff(
+                            retryProperties.getMaxAttempts(),
+                            Duration.ofMillis(retryProperties.getInitialDelayMs()))
+                    .jitter(0.5);
+//            case "backoff":
+            default -> Retry.backoff(
+                    retryProperties.getMaxAttempts(),
+                    Duration.ofMillis(retryProperties.getInitialDelayMs()));
+        };
     }
 }

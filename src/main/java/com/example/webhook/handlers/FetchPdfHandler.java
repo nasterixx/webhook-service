@@ -1,16 +1,14 @@
 package com.example.webhook.handlers;
 
 import com.example.webhook.core.chain.ReactiveWebhookHandler;
-import com.example.webhook.model.payload.LabelCreatedPayload;
-import com.example.webhook.model.payload.OrderCreatedPayload;
-import com.example.webhook.model.payload.Payload;
-import com.example.webhook.model.payload.PurchaseCreatedPayload;
 import org.springframework.stereotype.Component;
 import org.springframework.web.reactive.function.client.WebClient;
 import reactor.core.publisher.Mono;
 
+import java.util.Map;
+
 @Component("fetchPdfHandler")
-public class FetchPdfHandler implements ReactiveWebhookHandler<Payload, byte[]> {
+public class FetchPdfHandler implements ReactiveWebhookHandler<Map<String, Object>, byte[]> {
 
     private final WebClient webClient;
 
@@ -19,24 +17,16 @@ public class FetchPdfHandler implements ReactiveWebhookHandler<Payload, byte[]> 
     }
 
     @Override
-    public Mono<byte[]> handle(Payload payload) {
-
-        return switch (payload) {
-            case PurchaseCreatedPayload purchaseCreatedPayload -> getPdfBytes(purchaseCreatedPayload.getFilename());
-            case OrderCreatedPayload purchaseCreatedPayload -> getPdfBytes(purchaseCreatedPayload.getFilename());
-            case LabelCreatedPayload purchaseCreatedPayload -> getPdfBytes(purchaseCreatedPayload.getFilename());
-            default -> throw new IllegalStateException("Unexpected value: " + payload);
-        };
-//        return getPdfBytes(payload);
-    }
-
-    private Mono<byte[]> getPdfBytes(String filename) {
-        if (filename == null || filename.isBlank()) {
+    public Mono<byte[]> handle(Map<String, Object> payload) {
+        Object filenameObj = payload.get("filename");
+        if (filenameObj == null || filenameObj.toString().isBlank()) {
             return Mono.error(new IllegalArgumentException("filename is required to fetch PDF"));
         }
 
+        String url = filenameObj.toString();
+
         return webClient.get()
-                .uri(filename)
+                .uri(url)
                 .retrieve()
                 .bodyToMono(byte[].class);
     }

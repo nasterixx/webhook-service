@@ -1,41 +1,48 @@
 package com.example.webhook.api;
 
 import com.example.webhook.core.dispatch.WebhookDispatcher;
-import com.example.webhook.core.map.WebhookRequestMapper;
 import com.example.webhook.model.common.WebhookRequestV1;
 import org.springframework.http.ResponseEntity;
+import org.springframework.http.server.reactive.ServerHttpRequest;
 import org.springframework.web.bind.annotation.*;
 import reactor.core.publisher.Mono;
 
+import java.time.Instant;
+import java.util.UUID;
+
 @RestController
-@RequestMapping("/api/{version}")
+@RequestMapping("/api/{version}/webhook")
 public class GenericWebhookController {
 
-    private final WebhookRequestMapper mapper;
     private final WebhookDispatcher dispatcher;
 
-    public GenericWebhookController(WebhookRequestMapper mapper, WebhookDispatcher dispatcher) {
-        this.mapper = mapper;
+    public GenericWebhookController(WebhookDispatcher dispatcher) {
         this.dispatcher = dispatcher;
     }
 
-    /*@PostMapping
-    public Mono<ResponseEntity<String>> receive(
-            @PathVariable("version") String version,
-            @RequestBody String body) {
-
-        return Mono.fromCallable(() -> (WebhookRequestV1<?>) mapper.map(body))
-                .flatMap(dispatcher::dispatch)
-                .map(status -> ResponseEntity.ok("Processed successfully (" + version + "): " + status));
-    }*/
-
     @PostMapping
-    public Mono<ResponseEntity<String>> receive(
+    public Mono<ResponseEntity<ApiResponse<Object>>> receive(
             @PathVariable("version") String version,
-            @RequestBody String body) {
+            @RequestBody Mono<WebhookRequestV1> requestMono,
+            ServerHttpRequest httpRequest
+    ) {
+        long start = System.currentTimeMillis();
+        String requestId = httpRequest.getHeaders().getFirst("X-Request-Id");
+        String traceId = UUID.randomUUID().toString();
 
-        return Mono.fromCallable(() -> (WebhookRequestV1<?>) mapper.map(body))
-                .flatMap(dispatcher::dispatch)
-                .map(status -> ResponseEntity.ok("Processed successfully (" + version + "): " + status));
+        return requestMono
+                .flatMap(dispatcher::dispatch)   // Mono<Object>
+                .map(result -> {
+                    ApiResponse<Object> response = new ApiResponse<>(
+                            Instant.now(),
+                            "SUCCESS",
+                            "Webhook processed successfully (" + version + ")",
+                            requestId,
+                            UUID.randomUUID().toString(),
+                            System.currentTimeMillis() - start,
+                            result
+                    );
+                    return ResponseEntity.ok(response);
+                });
     }
 }

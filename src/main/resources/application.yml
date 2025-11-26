@@ -1,3 +1,6 @@
+server:
+  port: 8080
+
 spring:
   application:
     name: webhook-service
@@ -11,7 +14,7 @@ webhook:
   # Dynamic schema → payload class + ordered handler chain
   schemas:
     "[com.example.webhook.model.payload.PurchaseCreatedPayload]":
-      className: com.example.webhook.model.payload.PurchaseCreatedPayload
+#      className: com.example.webhook.model.payload.PurchaseCreatedPayload
       handlers:
         - fetchPdfHandler        # PurchaseCreatedPayload -> byte[]
         - storeNs3Handler        # byte[] -> String (ns3 uri)
@@ -19,33 +22,13 @@ webhook:
       retry:
         enabled: true
         strategy: backoff        # fixed | backoff | jitter
-
-    # Example: schema with jitter strategy
-    "[com.example.webhook.model.payload.OrderCreatedPayload]":
-      className: com.example.webhook.model.payload.OrderCreatedPayload
-      handlers:
-        - fetchPdfHandler
-        - storeNs3Handler
-        - callModuleCHandler
-      retry:
-        enabled: true
-        strategy: jitter
-
-    # Example: schema without retry block -> NO RETRY
-    "[com.example.webhook.model.payload.LabelCreatedPayload]":
-      className: com.example.webhook.model.payload.LabelCreatedPayload
-      handlers:
-        - fetchPdfHandler
-        - storeNs3Handler
-        - callModuleCHandler
-      # retry omitted => no retry
-      retry:
-        enabled: true
-        strategy: fixed
+        retry-on:
+          - java.io.IOException
+          - org.springframework.web.reactive.function.client.WebClientRequestException
 
 security:
   webhook:
-    expected-token: "secure-token"
+    expected-token: "my-secure-token"
     required-headers:
       - "X-Auth-Token"
       - "X-Request-Id"
