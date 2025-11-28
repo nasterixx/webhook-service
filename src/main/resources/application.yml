@@ -7,24 +7,40 @@ spring:
 
 webhook:
   retry:
-    max-attempts: 5
+    max-attempts: 1
     initial-delay-ms: 1000
     multiplier: 2.0
 
-  # Dynamic schema → payload class + ordered handler chain
   schemas:
-    "[com.example.webhook.model.payload.PurchaseCreatedPayload]":
-#      className: com.example.webhook.model.payload.PurchaseCreatedPayload
+    "[c.s.v1.p.cr]":
       handlers:
-        - fetchPdfHandler        # PurchaseCreatedPayload -> byte[]
-        - storeNs3Handler        # byte[] -> String (ns3 uri)
-        - callModuleCHandler     # String (ns3 uri) -> String (status)
+        - fetchPdfHandler
+        - storeNs3Handler
+        - callModuleCHandler
       retry:
         enabled: true
-        strategy: backoff        # fixed | backoff | jitter
+        strategy: backoff
         retry-on:
-          - java.io.IOException
-          - org.springframework.web.reactive.function.client.WebClientRequestException
+          - com.example.webhook.handlers.FetchPdfHandler$PdfFetchException
+          - com.example.webhook.handlers.StoreNs3Handler$StorageException
+          - com.example.webhook.handlers.CallModuleCHandler$ModuleCException
+
+    "[c.s.v1.p.cr.jitter]":
+      handlers:
+        - fetchPdfHandler
+        - storeNs3Handler
+        - callModuleCHandler
+      retry:
+        enabled: true
+        strategy: jitter
+        retry-on:
+          - com.example.webhook.handlers.FetchPdfHandler$PdfFetchException
+
+    "[c.s.v1.no.retry]":
+      handlers:
+        - fetchPdfHandler
+        - storeNs3Handler
+        - callModuleCHandler
 
 security:
   webhook:

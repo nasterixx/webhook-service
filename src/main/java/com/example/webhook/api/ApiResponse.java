@@ -1,13 +1,14 @@
 package com.example.webhook.api;
 
 import java.time.Instant;
+import java.util.Map;
 
-public record ApiResponse<T>(
+public record ApiResponse(
         Instant timestamp,
         String status,
         String message,
         String requestId,
         String traceId,
         long durationMs,
-        T result
+        Map<String, Object> result
 ) {}

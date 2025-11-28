@@ -30,19 +30,19 @@ public class WebhookAuthFilter implements WebFilter {
 
         var headers = exchange.getRequest().getHeaders();
 
-        if (securityProperties.getRequiredHeaders() != null) {
-            for (String required : securityProperties.getRequiredHeaders()) {
-                if (!StringUtils.hasText(headers.getFirst(required))) {
-                    return reject(exchange, HttpStatus.BAD_REQUEST, "Missing required header: " + required);
-                }
-            }
-        }
-
-        String token = headers.getFirst("X-Auth-Token");
-        if (!StringUtils.hasText(securityProperties.getExpectedToken())
-                || !securityProperties.getExpectedToken().equals(token)) {
-            return reject(exchange, HttpStatus.UNAUTHORIZED, "Invalid authentication token");
-        }
+//        if (securityProperties.getRequiredHeaders() != null) {
+//            for (String required : securityProperties.getRequiredHeaders()) {
+//                if (!StringUtils.hasText(headers.getFirst(required))) {
+//                    return reject(exchange, HttpStatus.BAD_REQUEST, "Missing required header: " + required);
+//                }
+//            }
+//        }
+//
+//        String token = headers.getFirst("X-Auth-Token");
+//        if (!StringUtils.hasText(securityProperties.getExpectedToken())
+//                || !securityProperties.getExpectedToken().equals(token)) {
+//            return reject(exchange, HttpStatus.UNAUTHORIZED, "Invalid authentication token");
+//        }
 
         return chain.filter(exchange);
     }
