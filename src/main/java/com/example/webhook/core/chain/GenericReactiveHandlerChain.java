@@ -4,10 +4,6 @@ import reactor.core.publisher.Mono;
 
 import java.util.List;
 
-/**
- * Dynamic reactive chain implementation operating on Object -> Object.
- * Type compatibility between handlers is guaranteed by configuration.
- */
 public class GenericReactiveHandlerChain implements ReactiveHandlerChain<Object, Object> {
 
     private final List<ReactiveWebhookHandler<Object, Object>> handlers;

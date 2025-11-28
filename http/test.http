@@ -1,35 +1,72 @@
 ### Test v1 Webhook
-POST http://localhost:8080/api/v1
+POST http://localhost:8080/api/v1/webhook
 Content-Type: application/json
-X-Auth-Token: secure-token
-X-Request-Id: 1
+X-Auth-Token: my-secure-token
+X-Request-Id: abc123
+
 
 {
   "data": {
     "type": "message",
     "attributes": {
-      "id": "ada-ad",
-      "name": "purchase.pl",
+      "id": "abc-123",
+      "name": "purchase.document",
       "occuredOn": "2025-01-01T10:45:00Z",
       "contentType": "application/vnd.api+json",
-      "contentSchema": "com.example.webhook.model.payload.PurchaseCreatedPayload",
+      "contentSchema": "c.s.v1.p.cr",
       "additonalContext": {
-        "sourceSystem": "A W",
-        "region": "T",
-        "type": "p.cr",
-        "pkg": "A_EL",
-        "source": "https://s.com"
+        "sourceSystem": "SYS_A",
+        "region": "EU",
+        "type": "purchase",
+        "pkg": "PKG_EU1",
+        "source": "https://source-system.example.com"
       },
       "payload": {
-        "pId": "asdl-asdfa",
-        "tag": "",
-        "value": "",
-        "accounts": [{"tag":"accountID","value":"11518288"}],
-        "analysisId": "742387-fdsg",
+        "pId": "PID-982374",
+        "tag": "invoice",
+        "value": "purchase-record",
+        "accounts": [
+          { "tag": "accountID", "value": "4411228899" }
+        ],
+        "analysisId": "AN-737393",
         "filename": "https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf",
-        "user": "usd",
-        "creationTimestamp": "2025-05-29T13:10:32.412285288Z"
+        "user": "john.doe",
+        "creationTimestamp": "2025-05-29T13:10:32.412285288Z",
+
+        /* Optional callback URL for async notification */
+        "callbackUrl": "https://your-callback.receiver.com/api/webhook/completed"
       }
     }
   }
 }
+
+
+//{
+//  "data": {
+//    "type": "message",
+//    "attributes": {
+//      "id": "ada-ad",
+//      "name": "purchase.pl",
+//      "occuredOn": "2025-01-01T10:45:00Z",
+//      "contentType": "application/vnd.api+json",
+//      "contentSchema": "com.example.webhook.model.payload.PurchaseCreatedPayload",
+//      "additonalContext": {
+//        "sourceSystem": "A W",
+//        "region": "T",
+//        "type": "p.cr",
+//        "pkg": "A_EL",
+//        "source": "https://s.com"
+//      },
+//      "payload": {
+//        "pId": "asdl-asdfa",
+//        "tag": "",
+//        "value": "",
+//        "accounts": [{"tag":"accountID","value":"11518288"}],
+//        "analysisId": "742387-fdsg",
+//        "filename": "https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf",
+//        "user": "usd",
+//        "creationTimestamp": "2025-05-29T13:10:32.412285288Z"
+//      }
+//    }
+//  }
+//}

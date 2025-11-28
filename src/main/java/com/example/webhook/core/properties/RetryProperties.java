@@ -2,10 +2,6 @@ package com.example.webhook.core.properties;
 
 import org.springframework.boot.context.properties.ConfigurationProperties;
 
-/**
- * Global retry configuration: attempts, delay, multiplier.
- * Per-schema 'retry.enabled' + 'retry.strategy' + 'retry.retryOn' decide how it's used.
- */
 @ConfigurationProperties(prefix = "webhook.retry")
 public class RetryProperties {
 

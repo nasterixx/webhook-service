@@ -21,7 +21,7 @@ public class WebhookSchemaProperties {
 
     public static class SchemaMapping {
         private List<String> handlers;
-        private SchemaRetry retry; // per-schema retry (optional)
+        private SchemaRetry retry;
 
         public List<String> getHandlers() {
             return handlers;
@@ -41,9 +41,9 @@ public class WebhookSchemaProperties {
     }
 
     public static class SchemaRetry {
-        private Boolean enabled;        // optional; null = disabled
-        private String strategy;        // "fixed", "backoff", "jitter"
-        private java.util.List<String> retryOn; // fully-qualified exception class names
+        private Boolean enabled;
+        private String strategy;
+        private List<String> retryOn;
 
         public Boolean getEnabled() {
             return enabled;
@@ -61,11 +61,11 @@ public class WebhookSchemaProperties {
             this.strategy = strategy;
         }
 
-        public java.util.List<String> getRetryOn() {
+        public List<String> getRetryOn() {
             return retryOn;
         }
 
-        public void setRetryOn(java.util.List<String> retryOn) {
+        public void setRetryOn(List<String> retryOn) {
             this.retryOn = retryOn;
         }
     }
