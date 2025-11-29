@@ -25,7 +25,7 @@ public class FetchPdfHandler implements ReactiveWebhookHandler<Map<String, Objec
         Object filenameObj = payload.get("filename");
 
         if (filenameObj == null || filenameObj.toString().isBlank()) {
-            return Mono.error(new PdfFetchException("Missing `filename` in payload"));
+            return Mono.error(new PdfFetchException("Missing `filename` (URL) in payload"));
         }
 
         String url = filenameObj.toString();
@@ -34,27 +34,19 @@ public class FetchPdfHandler implements ReactiveWebhookHandler<Map<String, Objec
         return webClient.get()
                 .uri(url)
                 .retrieve()
-                .onStatus(
-                        status -> status.is4xxClientError() || status.is5xxServerError(),
-                        response -> response.bodyToMono(String.class)
-                                .flatMap(body -> {
-                                    log.error("[FetchPdfHandler] Error response {} : {}", response.statusCode(), body);
-                                    return Mono.error(new PdfFetchException(
-                                            "Failed to fetch PDF: HTTP " + response.statusCode()));
-                                })
-                )
                 .bodyToMono(byte[].class)
                 .doOnError(ex -> {
                     if (ex instanceof WebClientResponseException wcre) {
-                        log.error("[FetchPdfHandler] HTTP error {} for {}",
-                                wcre.getStatusCode(), url);
+                        log.error("[FetchPdfHandler] HTTP error {} for {}", wcre.getStatusCode(), url);
                     } else {
                         log.error("[FetchPdfHandler] Unexpected error fetching {}: {}", url, ex.toString());
                     }
-                });
+                })
+                .onErrorMap(ex -> new PdfFetchException("Failed to fetch PDF from " + url, ex));
     }
 
     public static class PdfFetchException extends RuntimeException {
         public PdfFetchException(String msg) { super(msg); }
+        public PdfFetchException(String msg, Throwable cause) { super(msg, cause); }
     }
 }

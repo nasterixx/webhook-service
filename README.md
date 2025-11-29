@@ -1,26 +1,50 @@
-# Webhook Service (Reactive WebFlux + Dynamic Chain + Per-Schema Retry Strategy)
+# Webhook Service (Track A + ACK Receiver)
 
-Java 21 + Spring Boot 3 + WebFlux + Swagger + Gradle (Kotlin DSL)
+Tech stack:
+- Java 21
+- Spring Boot 3 (WebFlux)
+- Reactor (async)
+- Chain of Responsibility
+- Dynamic schema-based handler chains
+- In-memory queue + background workers (Track A)
+- Callback webhook (SUCCESS/ERROR)
+- ACK receiver endpoint for testing
+- Correlation IDs
+- Global error handler
+- Gradle (Kotlin DSL)
 
-## Highlights
+## Endpoints
 
-- **Reactive WebFlux**: non-blocking I/O using `WebClient`
-- **Single generic controller**: `/api/{version}/webhook`
-- **Dynamic mapping**: `contentSchema` → payload class & handler chain via `application.yml`
-- **Reactive Chain of Responsibility**:
-  1. `PurchaseCreatedPayload` → `byte[]` (fetch PDF)
-  2. `byte[]` → `String` (NS3 path)
-  3. `String` → `String` (status from Module C)
-- **Global retry tuning**: `webhook.retry.max-attempts`, `initial-delay-ms`, `multiplier`
-- **Per-schema retry control**:
-  - `retry.enabled`: true/false (optional; missing = no retry)
-  - `retry.strategy`: `fixed`, `backoff`, or `jitter` (optional; default = `backoff` if enabled)
-- **Security filter**: validates token + required headers for `/api/**`
-- **Swagger UI**: `/swagger-ui/index.html`
+### 1. Webhook Receiver
 
-## Run
+- `POST /api/v1/webhook`
+- Body: `WebhookRequestV1` JSON
 
-```bash
-cd webhook-service
-gradle wrapper
-./gradlew bootRun
+Example:
+
+```json
+{
+  "data": {
+    "type": "message",
+    "attributes": {
+      "id": "abc-123",
+      "name": "purchase.document",
+      "occuredOn": "2025-01-01T10:45:00Z",
+      "contentType": "application/json",
+      "contentSchema": "c.s.v1.p.cr",
+      "additonalContext": {
+        "sourceSystem": "SYS_A",
+        "region": "EU",
+        "type": "purchase",
+        "pkg": "PKG_EU1",
+        "source": "https://example.com"
+      },
+      "payload": {
+        "filename": "https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf",
+        "callbackUrl": "http://localhost:8080/api/ack",
+        "pId": "PID-1",
+        "analysisId": "AN-1"
+      }
+    }
+  }
+}

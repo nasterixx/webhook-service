@@ -27,10 +27,8 @@ public class CallModuleCHandler implements ReactiveWebhookHandler<String, Webhoo
         log.info("[CallModuleCHandler] Calling Module C with {}", ns3Location);
 
         return moduleCClient.initiateProcessing(ns3Location)
-                .doOnError(ex ->
-                        log.error("[CallModuleCHandler] Module C call failed: {}", ex.toString()))
-                .onErrorMap(ex ->
-                        new ModuleCException("Module C processing failed", ex))
+                .doOnError(ex -> log.error("[CallModuleCHandler] Module C call failed: {}", ex.toString()))
+                .onErrorMap(ex -> new ModuleCException("Module C processing failed", ex))
                 .map(status -> new WebhookProcessingResult(ns3Location, status));
     }
 

@@ -20,20 +20,20 @@ public class GlobalErrorHandler {
     private static final Logger log = LoggerFactory.getLogger(GlobalErrorHandler.class);
 
     @ExceptionHandler(Throwable.class)
-    public Mono<ResponseEntity<ApiResponse>> handle(Throwable ex) {
+    public Mono<ResponseEntity<ApiResponse<Object>>> handle(Throwable ex) {
         log.error("Global error caught: {}", ex.toString(), ex);
 
         return Mono.deferContextual(ctx -> Mono.just(buildErrorResponse(ex, ctx)));
     }
 
-    private ResponseEntity<ApiResponse> buildErrorResponse(
+    private ResponseEntity<ApiResponse<Object>> buildErrorResponse(
             Throwable ex,
             ContextView ctx
     ) {
         String requestId = ctx.getOrDefault(CTX_REQUEST_ID, "unknown");
         String traceId   = ctx.getOrDefault(CTX_TRACE_ID, "unknown");
 
-        ApiResponse body = new ApiResponse(
+        ApiResponse<Object> body = new ApiResponse<>(
                 Instant.now(),
                 "ERROR",
                 ex.getMessage(),

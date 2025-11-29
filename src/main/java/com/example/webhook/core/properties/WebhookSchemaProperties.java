@@ -43,7 +43,6 @@ public class WebhookSchemaProperties {
     public static class SchemaRetry {
         private Boolean enabled;
         private String strategy;
-        private List<String> retryOn;
 
         public Boolean getEnabled() {
             return enabled;
@@ -59,14 +58,6 @@ public class WebhookSchemaProperties {
 
         public void setStrategy(String strategy) {
             this.strategy = strategy;
-        }
-
-        public List<String> getRetryOn() {
-            return retryOn;
-        }
-
-        public void setRetryOn(List<String> retryOn) {
-            this.retryOn = retryOn;
         }
     }
 }

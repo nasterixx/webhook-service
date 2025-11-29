@@ -7,7 +7,7 @@ spring:
 
 webhook:
   retry:
-    max-attempts: 1
+    max-attempts: 5
     initial-delay-ms: 1000
     multiplier: 2.0
 
@@ -20,10 +20,6 @@ webhook:
       retry:
         enabled: true
         strategy: backoff
-        retry-on:
-          - com.example.webhook.handlers.FetchPdfHandler$PdfFetchException
-          - com.example.webhook.handlers.StoreNs3Handler$StorageException
-          - com.example.webhook.handlers.CallModuleCHandler$ModuleCException
 
     "[c.s.v1.p.cr.jitter]":
       handlers:
@@ -33,8 +29,6 @@ webhook:
       retry:
         enabled: true
         strategy: jitter
-        retry-on:
-          - com.example.webhook.handlers.FetchPdfHandler$PdfFetchException
 
     "[c.s.v1.no.retry]":
       handlers:
