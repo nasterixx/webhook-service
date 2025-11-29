@@ -8,6 +8,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import reactor.core.publisher.Mono;
+import reactor.core.scheduler.Schedulers;
 
 import java.time.Instant;
 import java.util.Map;
@@ -30,6 +31,104 @@ public class GenericWebhookController {
         this.callbackService = callbackService;
     }
 
+//    @PostMapping
+//    public Mono<ResponseEntity<ApiResponse>> receive(
+//            @PathVariable("version") String version,
+//            @RequestBody WebhookRequestV1 request
+//    ) {
+//        long start = System.currentTimeMillis();
+//
+//        return Mono.deferContextual(ctx -> {
+//
+//            String requestId = ctx.getOrDefault(CTX_REQUEST_ID, "unknown");
+//            String traceId   = ctx.getOrDefault(CTX_TRACE_ID, "unknown");
+//
+//            // Extract callback URL safely
+//            String callbackUrl = null;
+//            if (request != null &&
+//                    request.data() != null &&
+//                    request.data().attributes() != null &&
+//                    request.data().attributes().payload() != null) {
+//
+//                Object cb = request.data().attributes().payload().get("callbackUrl");
+//                if (cb != null) callbackUrl = cb.toString();
+//            }
+//            final String finalCallbackUrl = callbackUrl;
+//
+//            // 🚀 FULL FIRE-AND-FORGET PIPELINE (runs on separate thread)
+//            Mono.defer(() ->
+//                            dispatcher.dispatch(request)
+//                                    .flatMap(result -> callbackService.sendSuccess(finalCallbackUrl, traceId, result))
+//                                    .onErrorResume(ex -> callbackService.sendFailure(finalCallbackUrl, traceId, ex))
+//                                    .contextWrite(ctx)
+//                    )
+//                    .subscribeOn(Schedulers.boundedElastic())     // <-- MAGIC LINE
+//                    .subscribe();
+//
+//            // 🚀 IMMEDIATE RESPONSE
+//            ApiResponse response = new ApiResponse(
+//                    Instant.now(),
+//                    "ACCEPTED",
+//                    "Webhook received successfully (processing asynchronously: " + version + ")",
+//                    requestId,
+//                    traceId,
+//                    System.currentTimeMillis() - start,
+//                    null
+//            );
+//
+//            return Mono.just(ResponseEntity.ok(response));
+//        });
+//    }
+
+//    @PostMapping
+//    public Mono<ResponseEntity<ApiResponse>> receive(
+//            @PathVariable("version") String version,
+//            @RequestBody WebhookRequestV1 request
+//    ) {
+//        long start = System.currentTimeMillis();
+//
+//        return Mono.deferContextual(ctx -> {
+//
+//            String requestId = ctx.getOrDefault(CTX_REQUEST_ID, "unknown");
+//            String traceId   = ctx.getOrDefault(CTX_TRACE_ID, "unknown");
+//
+//            // Extract callback URL safely
+//            String callbackUrl = null;
+//            if (request != null &&
+//                    request.data() != null &&
+//                    request.data().attributes() != null &&
+//                    request.data().attributes().payload() != null) {
+//
+//                Object cb = request.data().attributes().payload().get("callbackUrl");
+//                if (cb != null) callbackUrl = cb.toString();
+//            }
+//            final String finalCallbackUrl = callbackUrl;
+//
+//            // 🚀 FULL FIRE-AND-FORGET PIPELINE (runs on separate thread)
+//            Mono.defer(() ->
+//                            dispatcher.dispatch(request)
+//                                    .flatMap(result -> callbackService.sendSuccess(finalCallbackUrl, traceId, result))
+//                                    .onErrorResume(ex -> callbackService.sendFailure(finalCallbackUrl, traceId, ex))
+//                                    .contextWrite(ctx)
+//                    )
+//                    .subscribeOn(Schedulers.boundedElastic())     // <-- MAGIC LINE
+//                    .subscribe();
+//
+//            // 🚀 IMMEDIATE RESPONSE
+//            ApiResponse response = new ApiResponse(
+//                    Instant.now(),
+//                    "ACCEPTED",
+//                    "Webhook received successfully (processing asynchronously: " + version + ")",
+//                    requestId,
+//                    traceId,
+//                    System.currentTimeMillis() - start,
+//                    null
+//            );
+//
+//            return Mono.just(ResponseEntity.ok(response));
+//        });
+//    }
+
     @PostMapping
     public Mono<ResponseEntity<ApiResponse>> receive(
             @PathVariable("version") String version,
@@ -42,7 +141,6 @@ public class GenericWebhookController {
             String requestId = ctx.getOrDefault(CTX_REQUEST_ID, "unknown");
             String traceId   = ctx.getOrDefault(CTX_TRACE_ID, "unknown");
 
-            // Safely extract callbackUrl (effectively final)
             String callbackUrl = null;
             try {
                 if (request != null &&
@@ -50,28 +148,26 @@ public class GenericWebhookController {
                         request.data().attributes() != null &&
                         request.data().attributes().payload() != null) {
 
-                    Map<String, Object> payload = request.data().attributes().payload();
-                    Object cb = payload.get("callbackUrl");
-                    if (cb != null) {
-                        callbackUrl = cb.toString();
-                    }
+                    Object cb = request.data().attributes().payload().get("callbackUrl");
+                    if (cb != null) callbackUrl = cb.toString();
                 }
             } catch (Exception e) {
-                log.warn("[Webhook] Failed to read callbackUrl from payload: {}", e.toString());
+                log.warn("[Webhook] unable to extract callbackUrl: {}", e.toString());
             }
-            final String finalCallbackUrl = callbackUrl; // now final for lambdas
+            final String finalCallbackUrl = callbackUrl;
 
-            log.info("[Webhook] Received request version={} requestId={} traceId={} callbackUrl={}",
-                    version, requestId, traceId, finalCallbackUrl);
-
-            // 🔥 Fire-and-forget async pipeline
-            dispatcher.dispatch(request)
-                    .flatMap(result -> callbackService.sendSuccess(finalCallbackUrl, traceId, result))
-                    .onErrorResume(ex -> callbackService.sendFailure(finalCallbackUrl, traceId, ex))
-                    .contextWrite(ctx)
+            // 🔥 Hard async break: move everything to boundedElastic BEFORE dispatching
+            Mono.fromRunnable(() -> { /* async separation */ })
+                    .subscribeOn(Schedulers.boundedElastic())
+                    .then(
+                            dispatcher.dispatch(request)
+                                    .flatMap(result -> callbackService.sendSuccess(finalCallbackUrl, traceId, result))
+                                    .onErrorResume(ex -> callbackService.sendFailure(finalCallbackUrl, traceId, ex))
+                                    .contextWrite(ctx)
+                    )
                     .subscribe();
 
-            // Immediate 200/OK response
+            // Return immediately
             ApiResponse body = new ApiResponse(
                     Instant.now(),
                     "ACCEPTED",
@@ -85,4 +181,6 @@ public class GenericWebhookController {
             return Mono.just(ResponseEntity.ok(body));
         });
     }
+
+
 }
