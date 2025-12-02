@@ -27,11 +27,13 @@ public class WebhookDispatcher {
         Object input = request.data().attributes().payload();
 
         GenericReactiveHandlerChain chain = chainBuilder.buildChain(schema);
-        WebhookSchemaProperties.SchemaMapping mapping = chainBuilder.getSchemaMapping(schema);
+        WebhookSchemaProperties.SchemaMapping mapping =
+                chainBuilder.getSchemaMapping(schema);
 
         Mono<Object> pipeline = chain.execute(input);
 
         WebhookSchemaProperties.SchemaRetry schemaRetry = mapping.getRetry();
+
         if (schemaRetry == null || !Boolean.TRUE.equals(schemaRetry.getEnabled())) {
             return pipeline;
         }
@@ -41,6 +43,8 @@ public class WebhookDispatcher {
                 : "backoff";
 
         Retry retrySpec = buildRetrySpec(strategy);
+
+        // Simple: retry on any exception when enabled
         return pipeline.retryWhen(retrySpec);
     }
 
@@ -50,7 +54,10 @@ public class WebhookDispatcher {
 
         return switch (strategy) {
             case "fixed" -> Retry.fixedDelay(attempts, initial);
-            case "jitter" -> Retry.backoff(attempts, initial).jitter(0.5);
+            case "jitter" -> Retry
+                    .backoff(attempts, initial)
+                    .jitter(0.5);
+            //case "backoff":
             default -> Retry.backoff(attempts, initial);
         };
     }

@@ -19,7 +19,7 @@ public class ModuleCClient {
     }
 
     public Mono<String> initiateProcessing(String ns3Location) {
-        log.info("[ModuleCClient] Calling Module C with ns3Location={}", ns3Location);
+        log.info("Calling Module C with ns3Location={}", ns3Location);
         return webClient.post()
                 .uri("https://example.com/module-c/process")
                 .contentType(MediaType.APPLICATION_JSON)

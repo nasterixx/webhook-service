@@ -12,7 +12,7 @@ webhook:
     multiplier: 2.0
 
   schemas:
-    "[c.s.v1.p.cr]":
+    "c.s.v1.p.cr":
       handlers:
         - fetchPdfHandler
         - storeNs3Handler
@@ -20,8 +20,12 @@ webhook:
       retry:
         enabled: true
         strategy: backoff
+        retry-on:
+          - com.example.webhook.handlers.FetchPdfHandler$PdfFetchException
+          - com.example.webhook.handlers.StoreNs3Handler$StorageException
+          - com.example.webhook.handlers.CallModuleCHandler$ModuleCException
 
-    "[c.s.v1.p.cr.jitter]":
+    "c.s.v1.p.cr.jitter":
       handlers:
         - fetchPdfHandler
         - storeNs3Handler
@@ -29,8 +33,10 @@ webhook:
       retry:
         enabled: true
         strategy: jitter
+        retry-on:
+          - com.example.webhook.handlers.FetchPdfHandler$PdfFetchException
 
-    "[c.s.v1.no.retry]":
+    "c.s.v1.no.retry":
       handlers:
         - fetchPdfHandler
         - storeNs3Handler

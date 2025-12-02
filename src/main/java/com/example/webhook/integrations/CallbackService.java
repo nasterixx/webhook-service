@@ -7,7 +7,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
 import reactor.core.publisher.Mono;
 
-import java.time.Instant;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -32,7 +31,6 @@ public class CallbackService {
         body.put("traceId", traceId);
         body.put("status", "SUCCESS");
         body.put("result", result);
-        body.put("timestamp", Instant.now().toString());
 
         log.info("[Callback] Sending SUCCESS callback to {}", url);
 
@@ -57,7 +55,6 @@ public class CallbackService {
         body.put("traceId", traceId);
         body.put("status", "ERROR");
         body.put("error", ex.getMessage());
-        body.put("timestamp", Instant.now().toString());
 
         log.info("[Callback] Sending ERROR callback to {}", url);
 

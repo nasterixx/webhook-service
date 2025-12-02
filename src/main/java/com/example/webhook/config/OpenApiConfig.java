@@ -11,7 +11,7 @@ public class OpenApiConfig {
     GroupedOpenApi webhookApi() {
         return GroupedOpenApi.builder()
                 .group("webhook-apis")
-                .pathsToMatch("/api/**")
+                .pathsToMatch("/api/**/webhook")
                 .build();
     }
 }

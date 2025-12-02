@@ -12,7 +12,7 @@ public class StorageService {
 
     public Mono<String> upload(String key, byte[] bytes) {
         String objectUri = "ns3://bucket/" + key + ".pdf";
-        log.info("[StorageService] Storing {} bytes to {}", (bytes == null ? 0 : bytes.length), objectUri);
+        log.info("Storing {} bytes to {}", (bytes == null ? 0 : bytes.length), objectUri);
         return Mono.just(objectUri);
     }
 }
