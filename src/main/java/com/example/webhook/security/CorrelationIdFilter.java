@@ -30,10 +30,9 @@ public class CorrelationIdFilter implements WebFilter {
         MDC.put(CTX_REQUEST_ID, requestId);
         MDC.put(CTX_TRACE_ID, traceId);
 
-        String finalRequestId = requestId;
         return chain.filter(exchange)
                 .contextWrite(ctx -> ctx
-                        .put(CTX_REQUEST_ID, finalRequestId)
+//                        .put(CTX_REQUEST_ID, requestId)
                         .put(CTX_TRACE_ID, traceId)
                 )
                 .doFinally(sig -> MDC.clear());

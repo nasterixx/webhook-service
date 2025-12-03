@@ -1,4 +1,4 @@
-# Webhook Service (WebFlux + Chain + Retry + Correlation IDs + Async Callback)
+# Webhook Service (WebFlux + Chain + Retry + Correlation IDs + Async Callback + Circuit Breakers)
 
 Java 21 + Spring Boot 3 + WebFlux + Swagger + Gradle
 
@@ -11,6 +11,9 @@ Java 21 + Spring Boot 3 + WebFlux + Swagger + Gradle
 - Local error handling in controller (no `@RestControllerAdvice`)
 - Async fire-and-forget processing with optional callback webhook:
   - Put `callbackUrl` inside `payload` to receive completion status
+- Circuit breakers (Resilience4j):
+  - `fetchPdf` for PDF download failures/latency
+  - `moduleC` for Module C downstream failures/latency
 
 ## Run
 

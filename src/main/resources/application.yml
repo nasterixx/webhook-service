@@ -7,12 +7,12 @@ spring:
 
 webhook:
   retry:
-    max-attempts: 5
+    max-attempts: 1
     initial-delay-ms: 1000
     multiplier: 2.0
 
   schemas:
-    "c.s.v1.p.cr":
+    "[c.s.v1.p.cr]":
       handlers:
         - fetchPdfHandler
         - storeNs3Handler
@@ -25,7 +25,7 @@ webhook:
           - com.example.webhook.handlers.StoreNs3Handler$StorageException
           - com.example.webhook.handlers.CallModuleCHandler$ModuleCException
 
-    "c.s.v1.p.cr.jitter":
+    "[c.s.v1.p.cr.jitter]":
       handlers:
         - fetchPdfHandler
         - storeNs3Handler
@@ -36,7 +36,7 @@ webhook:
         retry-on:
           - com.example.webhook.handlers.FetchPdfHandler$PdfFetchException
 
-    "c.s.v1.no.retry":
+    "[c.s.v1.no.retry]":
       handlers:
         - fetchPdfHandler
         - storeNs3Handler
@@ -48,6 +48,32 @@ security:
     required-headers:
       - "X-Auth-Token"
       - "X-Request-Id"
+
+resilience4j:
+  circuitbreaker:
+    instances:
+      fetchPdf:
+        register-health-indicator: true
+        sliding-window-type: COUNT_BASED
+        sliding-window-size: 30
+        minimum-number-of-calls: 10
+        failure-rate-threshold: 40
+        wait-duration-in-open-state: 5s
+        automatic-transition-from-open-to-half-open-enabled: true
+        permitted-number-of-calls-in-half-open-state: 3
+        slow-call-duration-threshold: 1500ms
+        slow-call-rate-threshold: 50
+      moduleC:
+        register-health-indicator: true
+        sliding-window-type: COUNT_BASED
+        sliding-window-size: 20
+        minimum-number-of-calls: 10
+        failure-rate-threshold: 50
+        wait-duration-in-open-state: 10s
+        automatic-transition-from-open-to-half-open-enabled: true
+        permitted-number-of-calls-in-half-open-state: 3
+        slow-call-duration-threshold: 2s
+        slow-call-rate-threshold: 50
 
 logging:
   level:

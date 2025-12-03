@@ -57,7 +57,7 @@ public class WebhookDispatcher {
             case "jitter" -> Retry
                     .backoff(attempts, initial)
                     .jitter(0.5);
-            //case "backoff":
+//            case "backoff":
             default -> Retry.backoff(attempts, initial);
         };
     }

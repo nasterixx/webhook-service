@@ -1,6 +1,9 @@
 package com.example.webhook.handlers;
 
 import com.example.webhook.core.chain.ReactiveWebhookHandler;
+import io.github.resilience4j.circuitbreaker.CircuitBreaker;
+import io.github.resilience4j.circuitbreaker.CircuitBreakerRegistry;
+import io.github.resilience4j.reactor.circuitbreaker.operator.CircuitBreakerOperator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
@@ -15,9 +18,11 @@ public class FetchPdfHandler implements ReactiveWebhookHandler<Map<String, Objec
 
     private static final Logger log = LoggerFactory.getLogger(FetchPdfHandler.class);
     private final WebClient webClient;
+    private final CircuitBreaker circuitBreaker;
 
-    public FetchPdfHandler(WebClient webClient) {
+    public FetchPdfHandler(WebClient webClient, CircuitBreakerRegistry cbRegistry) {
         this.webClient = webClient;
+        this.circuitBreaker = cbRegistry.circuitBreaker("fetchPdf");
     }
 
     @Override
@@ -44,6 +49,7 @@ public class FetchPdfHandler implements ReactiveWebhookHandler<Map<String, Objec
                                 })
                 )
                 .bodyToMono(byte[].class)
+                .transformDeferred(CircuitBreakerOperator.of(circuitBreaker))
                 .doOnError(ex -> {
                     if (ex instanceof WebClientResponseException wcre) {
                         log.error("[FetchPdfHandler] HTTP error {} for {}",
@@ -51,10 +57,15 @@ public class FetchPdfHandler implements ReactiveWebhookHandler<Map<String, Objec
                     } else {
                         log.error("[FetchPdfHandler] Unexpected error fetching {}: {}", url, ex.toString());
                     }
+                })
+                .onErrorMap(ex -> {
+                    if (ex instanceof PdfFetchException) return ex;
+                    return new PdfFetchException("PDF fetch failed", ex);
                 });
     }
 
     public static class PdfFetchException extends RuntimeException {
         public PdfFetchException(String msg) { super(msg); }
+        public PdfFetchException(String msg, Throwable cause) { super(msg, cause); }
     }
 }
